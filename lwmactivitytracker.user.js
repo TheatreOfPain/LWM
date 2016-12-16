@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name			LWMActivityTracker
 // @author			Theatre Of Pain (http://www.lordswm.com/pl_info.php?id=4821925)
-// @version			2.0.150809
+// @version			2.0.161216
 // @description		This script tracks your daily activities by monitoring experience, guilds, and faction points
 // @include			http://www.lordswm.com/home.php
 // @grant       	GM_getValue
@@ -20,7 +20,7 @@ const LIGHT_BG = '#FFFFFF';
 const DARK_BG = '#DDD9CD';
 const DATESTAMP_SIZE = 8;
 
-const EXPERIENCE_RECORD = 24;
+const EXPERIENCE_RECORD = 26;
 const DATESTAMP = 0;
 const EXP = 1;
 const FSP = 2;
@@ -45,6 +45,8 @@ const CG = 20;
 const SG = 21;
 const EG = 22;
 const RG = 23;
+const WG = 24;
+const AG = 25;
 
 // list labels
 const EXP_L = 'Experience';
@@ -70,6 +72,8 @@ const MG_L = 'Mercenaries\' guild';
 const CG_L = 'Commanders\' guild';
 const SG_L = 'Smiths\' guild';
 const EG_L = 'Enchanters\' guild';
+const WG_L = 'Watchers\' guild';
+const AG_L = 'Adventurers\' guild';
 
 // graph labels
 var labels = new Array();
@@ -97,7 +101,9 @@ var labels = new Array();
 	labels[CG] = 'CG';
 	labels[SG] = 'SG';
 	labels[EG] = 'EG';
-	
+	labels[WG] = 'WG';
+	labels[AG] = 'AG';
+
 var experience = new Array();
 var tracker = new Array();
 var experience_record = new Array(EXPERIENCE_RECORD);
@@ -131,7 +137,7 @@ function getPlayerAndServer() {
 			break;
 		}
 	}
-	
+
 	if (location.href.indexOf('.com') != -1) {
 		server_name = '.com';
 	} else {
@@ -147,7 +153,7 @@ function getPlayerAndServer() {
 
 function getExperienceData() {
 	var temp_data;
-	
+
 	// migrate earlier version that didn't store experience by player name
 	temp_data = GM_getValue('Experience', -1);
 	if (temp_data != -1) {
@@ -155,31 +161,17 @@ function getExperienceData() {
 		GM_deleteValue('Experience');
 		document.cookie = 'ActivityTrackerBackup=0;expires=' + new Date('1999');
 	}
-	
+
 	temp_data = GM_getValue(player_name + server_name + ' Experience', -1);
 	if (temp_data != -1) {
 		experience = temp_data.split(',');
-		// migrate earlier version that didn't store dwarves data
+		// migrate earlier version that didn't store watchers and adventurers data
 		if (experience[0].split('#').length != EXPERIENCE_RECORD) {
 			var experience_record = new Array(EXPERIENCE_RECORD);
 			for (var x = 0; x < experience.length; x++) {
-				experience_record = experience[x].split('#');
-				experience_record[EG] = experience_record[TG];
-				experience_record[SG] = experience_record[GG];
-				experience_record[CG] = experience_record[LG];
-				experience_record[MG] = experience_record[HG];
-				experience_record[TG] = experience_record[ZZ];
-				experience_record[GG] = experience_record[YY];
-				experience_record[LG] = experience_record[XX];
-				experience_record[HG] = experience_record[TRIBAL];
-				experience_record[TRIBAL] = 0;
-				experience_record[XX] = 0;
-				experience_record[YY] = 0;
-				experience_record[ZZ] = 0;
-				experience_record[RG] = 0;
-				experience[x] = experience_record.toString().replace(/,/g,'#');
+				experience[x] = experience[x] + '#0#0';
 			}
-			document.cookie = player_name + server_name + 'ActivityTrackerBackup=0' 
+			document.cookie = player_name + server_name + 'ActivityTrackerBackup=0'
 							+ ';expires=' + new Date('1999');
 		} else {
 			var backup_data = getCookie(player_name + server_name + 'ActivityTrackerBackup');
@@ -198,7 +190,7 @@ function getExperienceData() {
 					}
 				}
 				experience.sort();
-				experience.reverse();		
+				experience.reverse();
 			}
 		}
 	} else {
@@ -224,7 +216,7 @@ function setExperienceData() {
 	experience.sort();
 	experience.reverse();
 	GM_setValue(player_name + server_name + ' Experience', experience.toString());
-	
+
 	// keep last n days of data as cookie to recover from broswer crashes
 	// n is determined by COMPARTMENT_SIZE
 	var backup_data = new Array();
@@ -235,7 +227,7 @@ function setExperienceData() {
 		backup_data.push(experience[z]);
 		z++;
 	}
-	document.cookie = player_name + server_name + 'ActivityTrackerBackup=' + backup_data.toString() 
+	document.cookie = player_name + server_name + 'ActivityTrackerBackup=' + backup_data.toString()
 					+ ';expires=' + new Date('2050');
 }
 
@@ -283,12 +275,12 @@ function getExperienceRecord() {
 			experience_td = all_tds[i];
 		}
 	}
-	
+
 	matched = experience_td.innerHTML.replace(/,/g, '').match(/\((\d*)\)/);
 	temp_experience_record[EXP] = RegExp.$1;
-	
+
 	faction_array = faction_td.innerHTML.split('&nbsp;&nbsp;');
-	
+
  	for (var i = 0; i < faction_array.length; i++) {
 		// faction points
 		matched = faction_array[i].match(/Knight: (\d*)/);
@@ -378,6 +370,16 @@ function getExperienceRecord() {
 			matched = faction_array[i].match(/\((\d*.\d*)\)/);
 			temp_experience_record[SG] = RegExp.$1;
 		}
+		matched = faction_array[i].match(/Watchers' guild: (\d*)/);
+		if (matched != null) {
+			matched = faction_array[i].match(/\((\d*.\d*)\)/);
+			temp_experience_record[WG] = RegExp.$1;
+		}
+		matched = faction_array[i].match(/Adventurers' guild: (\d*)/);
+		if (matched != null) {
+			matched = faction_array[i].match(/\((\d*.\d*)\)/);
+			temp_experience_record[AG] = RegExp.$1;
+		}
 	}
 
 	matched = document.getElementById('home_2').innerHTML.match(/\((\d*.\d*)\)/);
@@ -397,14 +399,14 @@ function getExperienceRecord() {
 		day = '0' + day;
 	}
 	temp_experience_record[DATESTAMP] = '' + year + month + day;
-	temp_experience_record[FSP] = roundNumber((parseFloat(temp_experience_record[KNIGHT]) 
-								+ parseFloat(temp_experience_record[NECRO]) 
-								+ parseFloat(temp_experience_record[WIZARD]) 
+	temp_experience_record[FSP] = roundNumber((parseFloat(temp_experience_record[KNIGHT])
+								+ parseFloat(temp_experience_record[NECRO])
+								+ parseFloat(temp_experience_record[WIZARD])
 								+ parseFloat(temp_experience_record[ELF])
-								+ parseFloat(temp_experience_record[BARBARIAN]) 
-								+ parseFloat(temp_experience_record[DARK_ELF]) 
-								+ parseFloat(temp_experience_record[DEMON]) 
-								+ parseFloat(temp_experience_record[DWARF]) 
+								+ parseFloat(temp_experience_record[BARBARIAN])
+								+ parseFloat(temp_experience_record[DARK_ELF])
+								+ parseFloat(temp_experience_record[DEMON])
+								+ parseFloat(temp_experience_record[DWARF])
 								+ parseFloat(temp_experience_record[TRIBAL])), 2);
 
 	temp_experience_record[XX] = 0;
@@ -429,9 +431,11 @@ function getExperienceRecord() {
 					'\nRangers\' guild = ' + temp_experience_record[RG] +
 					'\nMercenaries\' guild = ' + temp_experience_record[MG] +
 					'\nCommanders\' guild = ' + temp_experience_record[CG] +
-					'\nSmiths\' guild = ' + temp_experience_record[SG]
+					'\nSmiths\' guild = ' + temp_experience_record[SG] +
+					'\nWatchers\' guild = ' + temp_experience_record[WG] +
+					'\nAdventurers\' guild = ' + temp_experience_record[AG]
 				)}
-	
+
 	return temp_experience_record;
 }
 
@@ -450,7 +454,7 @@ function buildTracker() {
 			}
 		}
 		tracker.push(difference_record);
-		
+
 		// no need to track historical data that will not be displayed on the graph
 		if (tracker.length == GRAPH_RECORDS) {
 			break;
@@ -475,7 +479,7 @@ function displayTracker() {
 	var td = document.createElement('td');
 	graph_div = document.createElement('div');
 	graph_div.id = 'graph_div';
-	td.appendChild(graph_div);	
+	td.appendChild(graph_div);
 
 	select = document.createElement('select');
 	select.id = 'select';
@@ -499,10 +503,12 @@ function displayTracker() {
 	addOption(select, SG, SG_L);
 	addOption(select, EG, EG_L);
 	addOption(select, RG, RG_L);
+	addOption(select, WG, WG_L);
+	addOption(select, AG, AG_L);
 	select.onchange = function() {
 		if (document.getElementById('graph') != null) {
 			document.getElementById('graph_div').removeChild(document.getElementById('graph'));
-		} 
+		}
 		GM_setValue('default activity', parseInt(select.options[select.selectedIndex].value));
 		if(debug) {GM_log('Display tracking for: ' + select.options[select.selectedIndex].text)}
 		document.getElementById('graph_div').appendChild(getActivityGraph(parseInt(select.options[select.selectedIndex].value)));
@@ -524,8 +530,8 @@ function displayTracker() {
 	}
 	td.appendChild(createOptionsDiv());
 	tr.appendChild(td);
-	main_table.appendChild(tr);	
-	
+	main_table.appendChild(tr);
+
 	function addOption(optionList, value, text) {
 		var option;
 		option = document.createElement('option');
@@ -586,14 +592,14 @@ function getActivityGraph(activity_type) {
 	}
 	max_value = roundUp(max_value);
 	second_max_value = roundUp(second_max_value);
-	
+
 	if (second_max_value != 0) {
 		// prevent value spikes from distorting the look of the graph
 		if (max_value/2 > second_max_value) {
 			max_value = second_max_value;
 		}
 	}
-	
+
 	// graph values
 	var tr, td;
 	var bgcolor = DARK_BG;
@@ -636,7 +642,7 @@ function getActivityGraph(activity_type) {
 		td.colSpan = graph_width;
 		tr.appendChild(td);
 	}
-	
+
 	graph.appendChild(tr);
 	var line_counter = COMPARTMENT_SIZE;
 	var class_name = 'wblight';
@@ -731,16 +737,17 @@ function provideEstimate(average_points, activity_type) {
     					160000000,230000000,325000000];
     var faction_lvl = [20,50,90,160,280,500,900,1600,2900,5300,9600,17300];
     var hg_lvl = [16,60,180,400,700,1200,2000,3000,4300,6000,8000,10500];
-    var lg_lvl = [90,180,360,720,1500,3000,5000,8000,12000,17000,23000,30000,38000,47000];
+    var lg_lvl = [90,180,360,720,1500,3000,5000,8000,12000,17000,23000,30000,38000,47000,57000];
     var gg_lvl = [10,30,60,100,150,210,280,360,450,550,660,800,1000,1300,2000];
-    var tg_lvl = [50,120,240,400,600,840,1200,2000,3000,4300,6000,8000,10800,14000];
-    var rg_lvl = [100,240,480,800,1200,1680,2400,4000,6000,8600];
-    var mg_lvl = [50,120,300,600,1000,1500,2200,3000,4000,5500,7800,11000];
-	var cg_lvl = [150, 350, 750, 1400,2200,4000];
+    var tg_lvl = [50,120,240,400,600,840,1200,2000,3000,4300,6000,8000,10800,14000,17600,21600,26000];
+    var rg_lvl = [100,240,480,800,1200,1680,2400,4000,6000,8600,12000];
+    var mg_lvl = [50,120,300,600,1000,1500,2200,3000,4000,5500,7800,11000,14500,18200,22200];
+	var cg_lvl = [150, 350, 750, 1400,2200,3200,4300,5600,7000,8500];
     var sg_lvl = [30,80,165,310,555,970,1680,2885,5770];
     var eg_lvl = [104,588,2200,7000,10000];
+	var wg_lvl = [60,200,450,850,1500];
 	var working_array = new Array();
-	
+
 	switch(activity_type) {
 	case EXP:
 		working_array = combat_lvl;
@@ -784,6 +791,12 @@ function provideEstimate(average_points, activity_type) {
 		break;
 	case EG:
 		working_array = eg_lvl;
+		break;
+	case WG:
+		working_array = wg_lvl;
+		break;
+	default:
+		return -1;
 	}
 	var current_points = experience[0].split('#')[activity_type];
 	if (current_points >= working_array[working_array.length - 1]) { // player has reached the maximum already
@@ -891,7 +904,7 @@ function roundNumber(unrounded_number, decimals) {
 	var rounded_number = Math.round(unrounded_number*Math.pow(10,decimals))/Math.pow(10,decimals);
 	return rounded_number;
 }
- 
+
 function roundUp(unrounded_number){
 	var float_number, int_number, rounded_number, without_round_up;
 	if (parseInt(unrounded_number) != unrounded_number) {	//float
