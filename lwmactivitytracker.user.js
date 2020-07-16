@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name			LWMActivityTracker
 // @author			Theatre Of Pain (http://www.lordswm.com/pl_info.php?id=4821925)
-// @version			2.0.161216
+// @version			2.0.200715
 // @description		This script tracks your daily activities by monitoring experience, guilds, and faction points
-// @include			http://www.lordswm.com/home.php
+// @include			https://www.lordswm.com/home.php
 // @grant       	GM_getValue
 // @grant       	GM_setValue
 // @grant       	GM_log
@@ -20,7 +20,7 @@ const LIGHT_BG = '#FFFFFF';
 const DARK_BG = '#DDD9CD';
 const DATESTAMP_SIZE = 8;
 
-const EXPERIENCE_RECORD = 26;
+const EXPERIENCE_RECORD = 27;
 const DATESTAMP = 0;
 const EXP = 1;
 const FSP = 2;
@@ -47,6 +47,7 @@ const EG = 22;
 const RG = 23;
 const WG = 24;
 const AG = 25;
+const LU = 26;
 
 // list labels
 const EXP_L = 'Experience';
@@ -74,6 +75,7 @@ const SG_L = 'Smiths\' guild';
 const EG_L = 'Enchanters\' guild';
 const WG_L = 'Watchers\' guild';
 const AG_L = 'Adventurers\' guild';
+const LU_L = 'Leaders\' Guild';
 
 // graph labels
 var labels = new Array();
@@ -103,6 +105,7 @@ var labels = new Array();
 	labels[EG] = 'EG';
 	labels[WG] = 'WG';
 	labels[AG] = 'AG';
+	labels[LU] = 'LU';
 
 var experience = new Array();
 var tracker = new Array();
@@ -232,7 +235,7 @@ function setExperienceData() {
 }
 
 function createExperienceRecord(passed_experience_record) {
-	new_record = passed_experience_record.toString().replace(/,/g,'#');
+    var new_record = passed_experience_record.toString().replace(/,/g,'#');
 	for (var z = 0; z < experience.length; z++) {
 		if (experience[z].substring(0,DATESTAMP_SIZE) == new_record.substring(0,DATESTAMP_SIZE)) {
 			if (experience[z] != new_record) {
@@ -350,7 +353,7 @@ function getExperienceRecord() {
 			matched = faction_array[i].match(/\((\d*.\d*)\)/);
 			temp_experience_record[TG] = RegExp.$1;
 		}
-		matched = faction_array[i].match(/Rangers' Guild: (\d*)/);
+		matched = faction_array[i].match(/Rangers' guild: (\d*)/);
 		if (matched != null) {
 			matched = faction_array[i].match(/\((\d*.\d*)\)/);
 			temp_experience_record[RG] = RegExp.$1;
@@ -379,6 +382,11 @@ function getExperienceRecord() {
 		if (matched != null) {
 			matched = faction_array[i].match(/\((\d*.\d*)\)/);
 			temp_experience_record[AG] = RegExp.$1;
+		}
+		matched = faction_array[i].match(/Leaders' Guild: (\d*)/);
+		if (matched != null) {
+			matched = faction_array[i].match(/\((\d*.\d*)\)/);
+			temp_experience_record[LU] = RegExp.$1;
 		}
 	}
 
@@ -433,7 +441,8 @@ function getExperienceRecord() {
 					'\nCommanders\' guild = ' + temp_experience_record[CG] +
 					'\nSmiths\' guild = ' + temp_experience_record[SG] +
 					'\nWatchers\' guild = ' + temp_experience_record[WG] +
-					'\nAdventurers\' guild = ' + temp_experience_record[AG]
+					'\nAdventurers\' guild = ' + temp_experience_record[AG] +
+					'\nLeaders\' guild = ' + temp_experience_record[LU]
 				)}
 
 	return temp_experience_record;
@@ -505,6 +514,7 @@ function displayTracker() {
 	addOption(select, RG, RG_L);
 	addOption(select, WG, WG_L);
 	addOption(select, AG, AG_L);
+	addOption(select, LU, LU_L);
 	select.onchange = function() {
 		if (document.getElementById('graph') != null) {
 			document.getElementById('graph_div').removeChild(document.getElementById('graph'));
@@ -520,9 +530,8 @@ function displayTracker() {
 	var temp_activity = GM_getValue('default activity', -1);
 	if (temp_activity != -1) {
 		graph_div.appendChild(getActivityGraph(temp_activity));
-		for(var i=0; i < select.options.length; i++){
-			if(select.options[i].value == temp_activity)
-				select.selectedIndex = i;
+		for(var j=0; j < select.options.length; j++){
+			if(select.options[j].value == temp_activity) select.selectedIndex = j;
 		}
 	} else {
 		GM_setValue('default activity', EXP);
@@ -746,6 +755,7 @@ function provideEstimate(average_points, activity_type) {
     var sg_lvl = [30,80,165,310,555,970,1680,2885,5770];
     var eg_lvl = [104,588,2200,7000,10000];
 	var wg_lvl = [60,200,450,850,1500];
+	var lu_lvl = [80,180,300,440,600,780,990,1230,1500,2200,3200,4500];
 	var working_array = new Array();
 
 	switch(activity_type) {
@@ -794,6 +804,9 @@ function provideEstimate(average_points, activity_type) {
 		break;
 	case WG:
 		working_array = wg_lvl;
+		break;
+	case LU:
+		working_array = lu_lvl;
 		break;
 	default:
 		return -1;
@@ -933,7 +946,7 @@ function lineCount(data_lines) {
 function tooltipStyle() {
 	var style = document.createElement('style');
 	style.type = 'text/css';
-	style.innerHTML =  '#tt { position:absolute; display:block;}';
+	style.innerHTML = '#tt { position:absolute; display:block;}';
 	style.innerHTML += '#ttcont { display:block; padding:2px 12px 3px 7px; margin-left:5px; background:#666; color:#fff; }';
 	document.body.appendChild(style);
 }
@@ -962,7 +975,7 @@ var tooltip = function(){
 			}
 			tt.style.display = 'block';
 			c.innerHTML = v;
-			tt.style.width = v.length * 8;
+			tt.style.width = ( v.length + 1 ) * 8;
 			h = parseInt(tt.offsetHeight) + top;
 			clearInterval(tt.timer);
 			tt.timer = setInterval(function(){tooltip.fade(1)},timer);
