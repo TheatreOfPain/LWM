@@ -1,21 +1,23 @@
 // ==UserScript==
 // @name			LWMNavigationLinks
 // @autohor			TheatreOfPain
-// @description		This script adds additional navigation links to overcome LWM's limitation of 10
-// @include			http://www.lordswm.com/*
-// @exclude			http://www.lordswm.com/warlog.php*
-// @exclude			http://www.lordswm.com/war.php*
-// @exclude			http://www.lordswm.com/brd.php
-// @exclude			http://www.lordswm.com/rightcol.php
-// @exclude			http://www.lordswm.com/ch_box.php
-// @exclude			http://www.lordswm.com/chatonline.php*
-// @exclude			http://www.lordswm.com/chat_line.php*
-// @exclude			http://www.lordswm.com/chatpost.php*
-// @exclude			http://www.lordswm.com/chat.php*
-// @exclude			http://www.lordswm.com/ticker.php*
-// @exclude			http://www.lordswm.com/cgame.php*
-// @exclude			http://www.lordswm.com/battlechat.php*
-// @exclude			http://www.lordswm.com/
+// @version			1.0.201020
+// @icon			http://dcdn.lordswm.com/hwmicon.ico
+// @description			This script adds additional navigation links to overcome LWM's limitation of 10
+// @include			https://www.lordswm.com/*
+// @exclude			https://www.lordswm.com/warlog.php*
+// @exclude			https://www.lordswm.com/war.php*
+// @exclude			https://www.lordswm.com/brd.php
+// @exclude			https://www.lordswm.com/rightcol.php
+// @exclude			https://www.lordswm.com/ch_box.php
+// @exclude			https://www.lordswm.com/chatonline.php*
+// @exclude			https://www.lordswm.com/chat_line.php*
+// @exclude			https://www.lordswm.com/chatpost.php*
+// @exclude			https://www.lordswm.com/chat.php*
+// @exclude			https://www.lordswm.com/ticker.php*
+// @exclude			https://www.lordswm.com/cgame.php*
+// @exclude			https://www.lordswm.com/battlechat.php*
+// @exclude			https://www.lordswm.com/
 // ==/UserScript==
 
 const DEFAULT_LINK = 'http://';
