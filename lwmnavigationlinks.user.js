@@ -18,6 +18,8 @@
 // @exclude			https://www.lordswm.com/cgame.php*
 // @exclude			https://www.lordswm.com/battlechat.php*
 // @exclude			https://www.lordswm.com/
+// @grant               	GM_getValue
+// @grant               	GM_setValue
 // ==/UserScript==
 
 const DEFAULT_LINK = 'http://';
